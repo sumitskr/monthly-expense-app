@@ -22,7 +22,7 @@
       <i class="fa-solid fa-plus-circle" style="color: var(--accent-primary);"></i> Add Fixed EMI
     </h3>
 
-    <form method="POST" action="{{ url_for('emis') }}">
+    <form method="POST" action="{{ url_for('emis', month=selected_month) }}">
       <div class="form-group">
         <label for="name"><i class="fa-solid fa-tag"></i> EMI Name / Title</label>
         <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Home Loan, Car Loan, iPhone EMI" required>
@@ -45,15 +45,51 @@
         <input type="number" step="0.01" min="1" id="monthly_amount" name="monthly_amount" class="form-control" placeholder="e.g. 15000" required>
       </div>
 
-      <div class="form-group">
-        <label for="start_month"><i class="fa-solid fa-calendar"></i> Start Month</label>
-        <input type="month" id="start_month" name="start_month" class="form-control" value="{{ selected_month }}" required>
+      <!-- ENTRY MODE SELECTOR -->
+      <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--card-border);">
+        <label style="font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: block;">
+          <i class="fa-solid fa-sliders" style="color: var(--accent-primary);"></i> How do you want to enter tenure?
+        </label>
+        
+        <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+          <label style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+            <input type="radio" name="entry_mode" value="by_start_date" checked onclick="toggleEmiMode('by_start_date')">
+            By Start Date & Total Tenure
+          </label>
+          <label style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+            <input type="radio" name="entry_mode" value="by_paid_pending" onclick="toggleEmiMode('by_paid_pending')">
+            By Months Paid & Pending
+          </label>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="tenure_months"><i class="fa-solid fa-hourglass-half"></i> Total Tenure (Months)</label>
-        <input type="number" min="1" max="600" id="tenure_months" name="tenure_months" class="form-control" placeholder="e.g. 12, 24, 36, 60" value="12" required>
-        <small style="color: var(--text-dim); font-size: 0.775rem;">e.g., 12 = 1 year, 60 = 5 years, 120 = 10 years</small>
+      <!-- MODE A: Start Date & Total Tenure -->
+      <div id="section_by_start_date">
+        <div class="form-group">
+          <label for="start_month"><i class="fa-solid fa-calendar"></i> Start Month</label>
+          <input type="month" id="start_month" name="start_month" class="form-control" value="{{ selected_month }}">
+        </div>
+
+        <div class="form-group">
+          <label for="tenure_months"><i class="fa-solid fa-hourglass-half"></i> Total Tenure (Months)</label>
+          <input type="number" min="1" max="600" id="tenure_months" name="tenure_months" class="form-control" placeholder="e.g. 12, 24, 36, 60" value="12">
+          <small style="color: var(--text-dim); font-size: 0.775rem;">e.g., 12 = 1 year, 60 = 5 years, 120 = 10 years</small>
+        </div>
+      </div>
+
+      <!-- MODE B: Months Paid & Months Pending -->
+      <div id="section_by_paid_pending" style="display: none;">
+        <div class="form-group">
+          <label for="months_paid"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Months Paid So Far (Including {{ selected_month }})</label>
+          <input type="number" min="1" max="600" id="months_paid" name="months_paid" class="form-control" placeholder="e.g. 2" value="2">
+          <small style="color: var(--text-dim); font-size: 0.775rem;">e.g., If Aug 2026 and Sept 2026 paid, enter 2</small>
+        </div>
+
+        <div class="form-group">
+          <label for="months_pending"><i class="fa-solid fa-clock" style="color: var(--color-emi);"></i> Months Pending / Remaining After {{ selected_month }}</label>
+          <input type="number" min="0" max="600" id="months_pending" name="months_pending" class="form-control" placeholder="e.g. 10" value="10">
+          <small style="color: var(--text-dim); font-size: 0.775rem;">System will automatically calculate the start month & total tenure!</small>
+        </div>
       </div>
 
       <div class="form-group">
@@ -70,7 +106,7 @@
   <!-- EMI List Table -->
   <div class="glass-card">
     <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
-      <i class="fa-solid fa-list-check" style="color: var(--text-muted);"></i> EMI Tenures & Progress Tracker
+      <i class="fa-solid fa-list-check" style="color: var(--text-muted);"></i> EMI Tenures & Progress Tracker for {{ selected_month }}
     </h3>
 
     {% if emi_details %}
@@ -81,7 +117,7 @@
               <th>EMI Name</th>
               <th>Start Month</th>
               <th>Monthly EMI</th>
-              <th>Tenure Status</th>
+              <th>Tenure Progress</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -101,20 +137,23 @@
                 <td class="text-emi" style="font-weight: 800;">-{{ format_currency(e.monthly_amount) }}</td>
                 <td style="min-width: 160px;">
                   <div style="font-size: 0.85rem; display: flex; justify-content: space-between;">
-                    <span>{{ item.completed }} / {{ e.tenure_months }} mos</span>
-                    <strong style="color: {% if item.remaining == 0 %}#10b981{% else %}#fff{% endif %};">
-                      {% if item.remaining == 0 %}Finished!{% else %}{{ item.remaining }} m left{% endif %}
+                    <span style="color: #34d399; font-weight: 600;">{{ item.completed }} paid</span>
+                    <strong style="color: {% if item.remaining == 0 %}#10b981{% else %}var(--color-emi){% endif %};">
+                      {% if item.remaining == 0 %}Finished!{% else %}{{ item.remaining }} months pending{% endif %}
                     </strong>
                   </div>
                   <div class="progress-bar-wrap">
                     <div class="progress-fill emi" style="width: {{ item.progress_pct }}%;"></div>
+                  </div>
+                  <div style="font-size: 0.75rem; color: var(--text-dim); text-align: right; margin-top: 0.15rem;">
+                    Total: {{ e.tenure_months }} mos
                   </div>
                 </td>
                 <td>
                   {% if not e.is_active %}
                     <span class="sub-badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8;">Paused</span>
                   {% elif item.is_active_now %}
-                    <span class="sub-badge badge-emi">Deducting</span>
+                    <span class="sub-badge badge-emi">Active</span>
                   {% else %}
                     <span class="sub-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">Completed</span>
                   {% endif %}
@@ -146,4 +185,21 @@
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function toggleEmiMode(mode) {
+    const secStartDate = document.getElementById('section_by_start_date');
+    const secPaidPending = document.getElementById('section_by_paid_pending');
+
+    if (mode === 'by_paid_pending') {
+      secStartDate.style.display = 'none';
+      secPaidPending.style.display = 'block';
+    } else {
+      secStartDate.style.display = 'block';
+      secPaidPending.style.display = 'none';
+    }
+  }
+</script>
 {% endblock %}
