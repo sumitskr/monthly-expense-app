@@ -71,19 +71,6 @@ class EMI(db.Model):
         except Exception:
             return False
 
-    def remaining_months(self, target_ym):
-        try:
-            start_idx = self.get_month_index(self.start_month)
-            target_idx = self.get_month_index(target_ym)
-            end_idx = start_idx + self.tenure_months - 1
-            if target_idx > end_idx:
-                return 0
-            if target_idx < start_idx:
-                return self.tenure_months
-            return end_idx - target_idx + 1
-        except Exception:
-            return 0
-
     def months_completed(self, target_ym):
         try:
             start_idx = self.get_month_index(self.start_month)
@@ -92,6 +79,17 @@ class EMI(db.Model):
                 return 0
             completed = target_idx - start_idx + 1
             return min(completed, self.tenure_months)
+        except Exception:
+            return 0
+
+    def remaining_months(self, target_ym):
+        try:
+            start_idx = self.get_month_index(self.start_month)
+            target_idx = self.get_month_index(target_ym)
+            if target_idx < start_idx:
+                return self.tenure_months
+            completed = self.months_completed(target_ym)
+            return max(0, self.tenure_months - completed)
         except Exception:
             return 0
 
