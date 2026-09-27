@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Panel - CashFlowPro{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <div>
+    <h1 style="font-size: 1.8rem;"><i class="fa-solid fa-user-shield" style="color: #a855f7;"></i> Admin Control Panel</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+      System overview, user verification & SMTP email OTP configurations
+    </p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin_users') }}" class="btn btn-outline"><i class="fa-solid fa-users"></i> Manage All Users</a>
+  </div>
+</div>
+
+<!-- Admin Stat Cards Grid -->
+<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+  <div class="glass-card stat-card">
+    <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;"><i class="fa-solid fa-users"></i></div>
+    <div class="stat-info">
+      <div class="label">Total Users</div>
+      <div class="value" style="color: #818cf8;">{{ total_users }}</div>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;"><i class="fa-solid fa-user-check"></i></div>
+    <div class="stat-info">
+      <div class="label">Verified Users</div>
+      <div class="value" style="color: #34d399;">{{ verified_users }}</div>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon emi"><i class="fa-solid fa-clock-rotate-left"></i></div>
+    <div class="stat-info">
+      <div class="label">EMIs Tracked</div>
+      <div class="value text-emi">{{ total_emis }}</div>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon savings"><i class="fa-solid fa-piggy-bank"></i></div>
+    <div class="stat-info">
+      <div class="label">Savings Plans</div>
+      <div class="value text-savings">{{ total_savings }}</div>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon expense"><i class="fa-solid fa-receipt"></i></div>
+    <div class="stat-info">
+      <div class="label">Expenses Logged</div>
+      <div class="value text-expense">{{ total_expenses }}</div>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <!-- SMTP Settings Configuration -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-envelope-open-text" style="color: var(--accent-primary);"></i> SMTP Email Server Settings (OTP)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+      Configure real SMTP server (Gmail / SendGrid / Custom SMTP) to send verification OTPs. If unconfigured, OTPs display in flash notifications & simulated boxes.
+    </p>
+
+    <form method="POST" action="{{ url_for('admin_save_smtp') }}">
+      <div class="form-group">
+        <label for="smtp_server">SMTP Server Host</label>
+        <input type="text" id="smtp_server" name="smtp_server" class="form-control" placeholder="e.g. smtp.gmail.com" value="{{ smtp_server }}">
+      </div>
+
+      <div class="form-group">
+        <label for="smtp_port">SMTP Port</label>
+        <input type="text" id="smtp_port" name="smtp_port" class="form-control" placeholder="587" value="587">
+      </div>
+
+      <div class="form-group">
+        <label for="smtp_user">SMTP Username / Email</label>
+        <input type="text" id="smtp_user" name="smtp_user" class="form-control" placeholder="user@gmail.com" value="{{ smtp_user }}">
+      </div>
+
+      <div class="form-group">
+        <label for="smtp_pass">SMTP App Password</label>
+        <input type="password" id="smtp_pass" name="smtp_pass" class="form-control" placeholder="••••••••••••">
+      </div>
+
+      <div class="form-group">
+        <label for="sender_email">Sender Email Address</label>
+        <input type="email" id="sender_email" name="sender_email" class="form-control" placeholder="noreply@cashflowpro.com" value="{{ smtp_user }}">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">
+        <i class="fa-solid fa-floppy-disk"></i> Save SMTP Configurations
+      </button>
+    </form>
+  </div>
+
+  <!-- Recent Users List -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-user-clock" style="color: var(--text-muted);"></i> Recently Registered Users
+    </h3>
+
+    {% if recent_users %}
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Name / Email</th>
+              <th>Status</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in recent_users %}
+              <tr>
+                <td>
+                  <strong style="color: #fff;">{{ u.full_name }}</strong><br>
+                  <small style="color: var(--text-dim);">{{ u.email }}</small>
+                </td>
+                <td>
+                  {% if u.is_verified %}
+                    <span class="sub-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">Verified</span>
+                  {% else %}
+                    <span class="sub-badge" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">Unverified</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if u.is_admin %}
+                    <span class="sub-badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc;">Admin</span>
+                  {% else %}
+                    <span class="sub-badge" style="background: rgba(255,255,255,0.06); color: var(--text-muted);">User</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
