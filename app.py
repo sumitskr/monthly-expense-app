@@ -318,14 +318,38 @@ def emis():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         category = request.form.get('category', 'General').strip()
+        entry_mode = request.form.get('entry_mode', 'by_start_date').strip()
+        
         try:
             monthly_amount = float(request.form.get('monthly_amount', 0.0))
-            tenure_months = int(request.form.get('tenure_months', 12))
         except ValueError:
-            flash("Invalid numeric value for amount or tenure.", "danger")
-            return redirect(url_for('emis'))
+            monthly_amount = 0.0
 
-        start_month = request.form.get('start_month', selected_month).strip()
+        if entry_mode == 'by_paid_pending':
+            try:
+                months_paid = max(1, int(request.form.get('months_paid', 1)))
+                months_pending = max(0, int(request.form.get('months_pending', 0)))
+            except ValueError:
+                flash("Invalid numeric value for months paid or pending.", "danger")
+                return redirect(url_for('emis'))
+
+            tenure_months = months_paid + months_pending
+            
+            # Calculate start_month: selected_month minus (months_paid - 1)
+            parts = [int(p) for p in selected_month.split('-')]
+            y, m = parts[0], parts[1]
+            m -= (months_paid - 1)
+            while m < 1:
+                m += 12
+                y -= 1
+            start_month = f"{y:04d}-{m:02d}"
+        else:
+            try:
+                tenure_months = int(request.form.get('tenure_months', 12))
+            except ValueError:
+                tenure_months = 12
+            start_month = request.form.get('start_month', selected_month).strip()
+
         notes = request.form.get('notes', '').strip()
 
         if not name or monthly_amount <= 0 or tenure_months <= 0:
@@ -344,7 +368,7 @@ def emis():
         )
         db.session.add(emi)
         db.session.commit()
-        flash(f"Added new EMI tenure: '{name}' ({format_currency(monthly_amount)}/mo for {tenure_months} months)", "success")
+        flash(f"Added EMI tenure: '{name}' ({format_currency(monthly_amount)}/mo for {tenure_months} months total)", "success")
         return redirect(url_for('emis'))
 
     user_emis = EMI.query.filter_by(user_id=current_user.id).order_by(EMI.created_at.desc()).all()
