@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Monthly Expenses - CashFlowPro{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <div>
+    <h1 style="font-size: 1.8rem;"><i class="fa-solid fa-receipt text-expense"></i> Living Expenses</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+      Log day-to-day and recurring monthly living expenses for {{ selected_month }}.
+    </p>
+  </div>
+  <div style="font-size: 1.1rem; font-weight: 700; color: var(--color-expense); background: var(--color-expense-bg); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(245, 158, 11, 0.3);">
+    Total Expenses: {{ format_currency(total_expense) }}
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+  <!-- Add Expense Form -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-plus-circle" style="color: var(--accent-primary);"></i> Add Expense
+    </h3>
+
+    <form method="POST" action="{{ url_for('expenses') }}">
+      <div class="form-group">
+        <label for="title"><i class="fa-solid fa-tag"></i> Expense Description / Title</label>
+        <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Apartment Rent, Supermarket, Electricity Bill" required>
+      </div>
+
+      <div class="form-group">
+        <label for="category"><i class="fa-solid fa-layer-group"></i> Category</label>
+        <select id="category" name="category" class="form-control">
+          <option value="Rent & Utilities">Rent & Housing Utilities</option>
+          <option value="Groceries">Groceries & Household</option>
+          <option value="Dining & Leisure">Dining out, Movies & Leisure</option>
+          <option value="Utilities">Electricity, Water, Fuel, Broadband</option>
+          <option value="Healthcare">Medical & Healthcare</option>
+          <option value="Subscriptions">Subscriptions & Software</option>
+          <option value="Shopping">Shopping & Apparel</option>
+          <option value="Miscellaneous">Miscellaneous</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="amount"><i class="fa-solid fa-indian-rupee-sign"></i> Amount (₹)</label>
+        <input type="number" step="0.01" min="0.01" id="amount" name="amount" class="form-control" placeholder="e.g. 4500" required>
+      </div>
+
+      <div class="form-group">
+        <label for="month_year"><i class="fa-solid fa-calendar"></i> Month</label>
+        <input type="month" id="month_year" name="month_year" class="form-control" value="{{ selected_month }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="expense_date"><i class="fa-solid fa-clock"></i> Expense Date</label>
+        <input type="date" id="expense_date" name="expense_date" class="form-control" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+        <i class="fa-solid fa-plus"></i> Save Expense Record
+      </button>
+    </form>
+  </div>
+
+  <!-- Expenses Table -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-list" style="color: var(--text-muted);"></i> Expenses Log for {{ selected_month }}
+    </h3>
+
+    {% if expenses %}
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in expenses %}
+              <tr>
+                <td><span style="color: var(--text-dim); font-size: 0.85rem;">{{ e.expense_date or '-' }}</span></td>
+                <td><strong style="color: #fff;">{{ e.title }}</strong></td>
+                <td><span class="sub-badge badge-expense">{{ e.category }}</span></td>
+                <td class="text-expense" style="font-weight: 800;">-{{ format_currency(e.amount) }}</td>
+                <td>
+                  <form method="POST" action="{{ url_for('delete_expense', id=e.id) }}" onsubmit="return confirm('Delete expense {{ e.title }}?');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm" title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        No expenses recorded for {{ selected_month }}. Add an expense using the form on the left.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Set default expense date to today
+    const dateInput = document.getElementById('expense_date');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().split('T')[0];
+    }
+  });
+</script>
+{% endblock %}
