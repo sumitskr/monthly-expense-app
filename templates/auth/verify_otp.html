@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify OTP - CashFlowPro{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="glass-card">
+    <div class="auth-header">
+      <div class="brand-icon" style="margin: 0 auto; width: 48px; height: 48px; font-size: 1.5rem; background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h2>Email Verification</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Enter the 6-digit OTP code sent to your email address<br>
+        <strong style="color: #fff;">{{ user.email }}</strong>
+      </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('verify_otp') }}">
+      <div class="form-group" style="text-align: center;">
+        <label for="otp" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Enter 6-Digit OTP Code</label>
+        <input type="text" id="otp" name="otp" class="form-control" placeholder="123456" maxlength="6" pattern="[0-9]{6}" required autofocus style="text-align: center; font-size: 1.5rem; letter-spacing: 8px; font-weight: 700;">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.85rem;">
+        <i class="fa-solid fa-circle-check"></i> Verify & Activate Account
+      </button>
+    </form>
+
+    <div style="margin-top: 1.5rem; text-align: center;">
+      <form method="POST" action="{{ url_for('resend_otp') }}" style="display: inline;">
+        <button type="submit" class="btn btn-outline btn-sm">
+          <i class="fa-solid fa-arrows-rotate"></i> Resend OTP Code
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
