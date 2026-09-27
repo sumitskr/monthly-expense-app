@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Cash Flow Forecast Calendar - CashFlowPro{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <div>
+    <h1 style="font-size: 1.8rem;"><i class="fa-solid fa-calendar-days" style="color: #38bdf8;"></i> Financial Forecast Calendar</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+      Select any start & future end date using the calendar picker to project cashflow & loan payoffs
+    </p>
+  </div>
+</div>
+
+<!-- CALENDAR DATE PICKER BAR -->
+<div class="glass-card" style="margin-bottom: 1.75rem; padding: 1.25rem;">
+  <form method="GET" action="{{ url_for('forecast') }}" style="display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap;">
+    
+    <div style="flex: 1; min-width: 180px;">
+      <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; display: block;">
+        <i class="fa-solid fa-play" style="color: var(--accent-primary);"></i> Forecast From (Start Month):
+      </label>
+      <input type="month" name="start_month" class="form-control" value="{{ start_ym }}" required>
+    </div>
+
+    <div style="flex: 1; min-width: 180px;">
+      <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; display: block;">
+        <i class="fa-solid fa-flag-checkered" style="color: #10b981;"></i> Forecast To (End Month Calendar):
+      </label>
+      <input type="month" name="end_month" class="form-control" value="{{ end_ym }}" required>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary" style="height: 42px;">
+        <i class="fa-solid fa-magnifying-glass-chart"></i> Calculate Forecast
+      </button>
+    </div>
+  </form>
+
+  <!-- Quick Horizon Preset Chips -->
+  <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--card-border); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Quick Presets:</span>
+    <a href="{{ url_for('forecast', start_month=start_ym, months=6) }}" class="btn btn-outline btn-sm">+6 Months</a>
+    <a href="{{ url_for('forecast', start_month=start_ym, months=12) }}" class="btn btn-outline btn-sm">+1 Year (12m)</a>
+    <a href="{{ url_for('forecast', start_month=start_ym, months=36) }}" class="btn btn-outline btn-sm">+3 Years (36m)</a>
+    <a href="{{ url_for('forecast', start_month=start_ym, months=60) }}" class="btn btn-outline btn-sm">+5 Years (60m)</a>
+    <a href="{{ url_for('forecast', start_month=start_ym, months=120) }}" class="btn btn-outline btn-sm">+10 Years (120m)</a>
+    <a href="{{ url_for('forecast', start_month=start_ym, months=240) }}" class="btn btn-outline btn-sm">+20 Years (240m)</a>
+  </div>
+</div>
+
+<!-- Forecast Summary Stat Grid -->
+<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));">
+  <div class="glass-card stat-card" style="border: 1px solid var(--color-cash);">
+    <div class="stat-icon cash"><i class="fa-solid fa-sack-dollar"></i></div>
+    <div class="stat-info">
+      <div class="label">Projected Surplus Cash</div>
+      <div class="value text-cash">{{ format_currency(forecast.total_projected_cash) }}</div>
+      <span class="sub-badge badge-cash">{{ forecast.horizon_months }} Months Horizon ({{ forecast.start_ym }} to {{ forecast.end_ym }})</span>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card" style="border: 1px solid var(--color-savings);">
+    <div class="stat-icon savings"><i class="fa-solid fa-vault"></i></div>
+    <div class="stat-info">
+      <div class="label">Total Wealth in Savings</div>
+      <div class="value text-savings">{{ format_currency(forecast.total_projected_savings) }}</div>
+      <span class="sub-badge badge-savings">FD, RD & SIP Contributions</span>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon emi"><i class="fa-solid fa-trophy"></i></div>
+    <div class="stat-info">
+      <div class="label">EMIs Finishing in Horizon</div>
+      <div class="value text-emi">{{ forecast.emis_ending_soon | length }} Loan(s)</div>
+      <span class="sub-badge badge-emi">Fully Paid Off</span>
+    </div>
+  </div>
+</div>
+
+<!-- EMIs Ending Notification Callout (if any) -->
+{% if forecast.emis_ending_soon %}
+  <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 2rem;">
+    <h4 style="color: #34d399; font-size: 1.05rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-circle-check"></i> Great News! EMIs Completing During This {{ forecast.horizon_months }}-Month Horizon:
+    </h4>
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem;">
+      {% for item in forecast.emis_ending_soon %}
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 0.65rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem;">
+          <strong style="color: #fff;">{{ item.emi_name }}</strong> &bull;
+          <span style="color: var(--text-muted);">Finishes in {{ item.ending_month }}</span> &bull;
+          <span class="text-cash" style="font-weight: 700;">+{{ format_currency(item.monthly_saved) }}/mo Unlocked Cash</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+<!-- Projection Line Chart -->
+<div class="glass-card" style="margin-bottom: 2rem;">
+  <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">
+    <i class="fa-solid fa-chart-area" style="color: #38bdf8;"></i> Cash Flow & EMI Reduction Curve ({{ forecast.start_ym }} &rarr; {{ forecast.end_ym }})
+  </h3>
+  <div style="position: relative; width: 100%; height: 340px;">
+    <canvas id="forecastChart"></canvas>
+  </div>
+</div>
+
+<!-- Month-by-Month Projection Table -->
+<div class="glass-card">
+  <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">
+    <i class="fa-solid fa-table-list" style="color: var(--text-muted);"></i> Detailed Month-by-Month Forecast Table ({{ forecast.horizon_months }} Months)
+  </h3>
+
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Salary (Income)</th>
+          <th>EMI Burden</th>
+          <th>Active EMIs</th>
+          <th>Savings Set Aside</th>
+          <th>Living Expenses</th>
+          <th>Net Available Cash</th>
+          <th>Cumulative Surplus</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in forecast.monthly_forecasts %}
+          <tr>
+            <td><strong style="color: #fff;">{{ row.month_label }}</strong></td>
+            <td class="text-salary">{{ format_currency(row.salary) }}</td>
+            <td class="text-emi" style="font-weight: 700;">-{{ format_currency(row.emi) }}</td>
+            <td><span class="sub-badge badge-emi">{{ row.active_emi_count }} Active</span></td>
+            <td class="text-savings">-{{ format_currency(row.savings) }}</td>
+            <td class="text-expense">-{{ format_currency(row.expenses) }}</td>
+            <td>
+              <strong class="text-cash" style="font-size: 1.05rem;">
+                {{ format_currency(row.net_cash) }}
+              </strong>
+            </td>
+            <td style="font-weight: 800; color: #34d399;">
+              {{ format_currency(row.cumulative_cash) }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('forecastChart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ forecast.labels | tojson }},
+        datasets: [
+          {
+            label: 'Monthly Available Cash (₹)',
+            data: {{ forecast.cash_data | tojson }},
+            borderColor: '#06b6d4',
+            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 3
+          },
+          {
+            label: 'EMI Monthly Burden (₹)',
+            data: {{ forecast.emi_data | tojson }},
+            borderColor: '#f43f5e',
+            borderDash: [5, 5],
+            fill: false,
+            tension: 0.1,
+            borderWidth: 2
+          },
+          {
+            label: 'Cumulative Cash Accumulated (₹)',
+            data: {{ forecast.cum_cash_data | tojson }},
+            borderColor: '#10b981',
+            fill: false,
+            tension: 0.35,
+            borderWidth: 2,
+            hidden: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 12, weight: '600' } }
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const val = context.raw || 0;
+                const formatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+                return `${context.dataset.label}: ${formatted}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+          y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}
