@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Monthly Salary - CashFlowPro{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <div>
+    <h1 style="font-size: 1.8rem;"><i class="fa-solid fa-money-bill-wave text-salary"></i> Monthly Salary</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+      Update your monthly salary income. It carries forward automatically until updated.
+    </p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+  <!-- Add/Update Salary Form -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-pen-to-square" style="color: var(--accent-primary);"></i>
+      Update Salary Entry
+    </h3>
+
+    <form method="POST" action="{{ url_for('salary') }}">
+      <div class="form-group">
+        <label for="month_year"><i class="fa-solid fa-calendar"></i> Month & Year</label>
+        <input type="month" id="month_year" name="month_year" class="form-control" value="{{ selected_month }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="amount"><i class="fa-solid fa-indian-rupee-sign"></i> Gross Salary Amount (₹)</label>
+        <input type="number" step="0.01" min="0" id="amount" name="amount" class="form-control" 
+               placeholder="e.g. 125000" 
+               value="{{ current_salary_rec.amount if current_salary_rec else '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="notes"><i class="fa-solid fa-note-sticky"></i> Notes / Description (Optional)</label>
+        <input type="text" id="notes" name="notes" class="form-control" placeholder="e.g. Base Salary + Bonus" 
+               value="{{ current_salary_rec.notes if current_salary_rec else '' }}">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+        <i class="fa-solid fa-floppy-disk"></i> Save Salary for {{ selected_month }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Salary History Table -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-history" style="color: var(--text-muted);"></i> Salary Records History
+    </h3>
+
+    {% if salaries %}
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Salary Amount</th>
+              <th>Notes</th>
+              <th>Last Updated</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in salaries %}
+              <tr {% if s.month_year == selected_month %}style="background: rgba(59, 130, 246, 0.08);"{% endif %}>
+                <td>
+                  <strong style="color: #fff;">{{ s.month_year }}</strong>
+                  {% if s.month_year == selected_month %}
+                    <span class="sub-badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; font-size: 0.7rem;">Selected</span>
+                  {% endif %}
+                </td>
+                <td class="text-salary" style="font-weight: 800;">{{ format_currency(s.amount) }}</td>
+                <td><span style="color: var(--text-muted); font-size: 0.85rem;">{{ s.notes or '-' }}</span></td>
+                <td><small style="color: var(--text-dim);">{{ s.updated_at.strftime('%Y-%m-%d %H:%M') if s.updated_at else '-' }}</small></td>
+                <td>
+                  <form method="POST" action="{{ url_for('delete_salary', id=s.id) }}" onsubmit="return confirm('Delete salary record for {{ s.month_year }}?');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm" title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        No salary records found. Add your salary for the current month!
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
