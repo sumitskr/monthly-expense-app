@@ -1,0 +1,26 @@
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# SQLite Database & Instance folder (EXCLUDED)
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary & scratch files
+scratch/
+.env
+
+# Antigravity IDE & System artifacts
+.system_generated/
+.DS_Store
+Thumbs.db
