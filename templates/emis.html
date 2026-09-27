@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Fixed EMI Tenures - CashFlowPro{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <div>
+    <h1 style="font-size: 1.8rem;"><i class="fa-solid fa-clock-rotate-left text-emi"></i> Fixed EMI Tenures</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+      Fixed monthly loan/EMI commitments. They automatically calculate remaining months and deduct until tenure ends.
+    </p>
+  </div>
+  <div style="font-size: 1.1rem; font-weight: 700; color: var(--color-emi); background: var(--color-emi-bg); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(244, 63, 94, 0.3);">
+    Active Monthly EMI: {{ format_currency(total_active_monthly_emi) }}
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+  <!-- Add EMI Form -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-plus-circle" style="color: var(--accent-primary);"></i> Add Fixed EMI
+    </h3>
+
+    <form method="POST" action="{{ url_for('emis') }}">
+      <div class="form-group">
+        <label for="name"><i class="fa-solid fa-tag"></i> EMI Name / Title</label>
+        <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Home Loan, Car Loan, iPhone EMI" required>
+      </div>
+
+      <div class="form-group">
+        <label for="category"><i class="fa-solid fa-layer-group"></i> Category</label>
+        <select id="category" name="category" class="form-control">
+          <option value="Real Estate">Real Estate / Housing Loan</option>
+          <option value="Vehicle">Vehicle / Auto Loan</option>
+          <option value="Gadgets">Gadget / Electronics</option>
+          <option value="Personal Loan">Personal Loan</option>
+          <option value="Education">Education Loan</option>
+          <option value="General">General / Credit Card EMI</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="monthly_amount"><i class="fa-solid fa-indian-rupee-sign"></i> Monthly EMI Amount (₹)</label>
+        <input type="number" step="0.01" min="1" id="monthly_amount" name="monthly_amount" class="form-control" placeholder="e.g. 15000" required>
+      </div>
+
+      <div class="form-group">
+        <label for="start_month"><i class="fa-solid fa-calendar"></i> Start Month</label>
+        <input type="month" id="start_month" name="start_month" class="form-control" value="{{ selected_month }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="tenure_months"><i class="fa-solid fa-hourglass-half"></i> Total Tenure (Months)</label>
+        <input type="number" min="1" max="600" id="tenure_months" name="tenure_months" class="form-control" placeholder="e.g. 12, 24, 36, 60" value="12" required>
+        <small style="color: var(--text-dim); font-size: 0.775rem;">e.g., 12 = 1 year, 60 = 5 years, 120 = 10 years</small>
+      </div>
+
+      <div class="form-group">
+        <label for="notes"><i class="fa-solid fa-note-sticky"></i> Notes / Lender Name</label>
+        <input type="text" id="notes" name="notes" class="form-control" placeholder="e.g. HDFC Bank - Loan A/C 9876">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+        <i class="fa-solid fa-circle-plus"></i> Save EMI Commitment
+      </button>
+    </form>
+  </div>
+
+  <!-- EMI List Table -->
+  <div class="glass-card">
+    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-list-check" style="color: var(--text-muted);"></i> EMI Tenures & Progress Tracker
+    </h3>
+
+    {% if emi_details %}
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>EMI Name</th>
+              <th>Start Month</th>
+              <th>Monthly EMI</th>
+              <th>Tenure Status</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in emi_details %}
+              {% set e = item.emi %}
+              <tr {% if not e.is_active %}style="opacity: 0.5;"{% endif %}>
+                <td>
+                  <strong style="color: #fff;">{{ e.name }}</strong>
+                  <div style="font-size: 0.775rem; color: var(--text-muted);">
+                    <span class="sub-badge badge-emi">{{ e.category }}</span>
+                    {% if e.notes %}&bull; {{ e.notes }}{% endif %}
+                  </div>
+                </td>
+                <td>{{ e.start_month }}</td>
+                <td class="text-emi" style="font-weight: 800;">-{{ format_currency(e.monthly_amount) }}</td>
+                <td style="min-width: 160px;">
+                  <div style="font-size: 0.85rem; display: flex; justify-content: space-between;">
+                    <span>{{ item.completed }} / {{ e.tenure_months }} mos</span>
+                    <strong style="color: {% if item.remaining == 0 %}#10b981{% else %}#fff{% endif %};">
+                      {% if item.remaining == 0 %}Finished!{% else %}{{ item.remaining }} m left{% endif %}
+                    </strong>
+                  </div>
+                  <div class="progress-bar-wrap">
+                    <div class="progress-fill emi" style="width: {{ item.progress_pct }}%;"></div>
+                  </div>
+                </td>
+                <td>
+                  {% if not e.is_active %}
+                    <span class="sub-badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8;">Paused</span>
+                  {% elif item.is_active_now %}
+                    <span class="sub-badge badge-emi">Deducting</span>
+                  {% else %}
+                    <span class="sub-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">Completed</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display: flex; gap: 0.35rem;">
+                    <form method="POST" action="{{ url_for('toggle_emi', id=e.id) }}" style="display:inline;">
+                      <button type="submit" class="btn btn-outline btn-sm" title="Pause / Resume">
+                        <i class="fa-solid fa-{% if e.is_active %}pause{% else %}play{% endif %}"></i>
+                      </button>
+                    </form>
+
+                    <form method="POST" action="{{ url_for('delete_emi', id=e.id) }}" onsubmit="return confirm('Delete EMI tenure {{ e.name }}?');" style="display:inline;">
+                      <button type="submit" class="btn btn-danger btn-sm" title="Delete">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        No EMI tenures added yet. Add your fixed EMIs to automate monthly reductions.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
