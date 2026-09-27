@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - CashFlowPro{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="glass-card">
+    <div class="auth-header">
+      <div class="brand-icon" style="margin: 0 auto; width: 48px; height: 48px; font-size: 1.5rem;">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2>Welcome Back</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Sign in to access your available cash dashboard</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label for="email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="name@example.com" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="password"><i class="fa-solid fa-key"></i> Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.85rem;">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
+    </form>
+
+    <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+      Don't have an account? <a href="{{ url_for('register') }}" style="font-weight: 700;">Create One</a>
+    </div>
+
+    <!-- Quick Demo Accounts Box -->
+    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px dashed var(--card-border);">
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-primary); text-transform: uppercase; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-bolt"></i> Quick Demo Access
+      </div>
+      <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; color: var(--text-muted);">
+        <div><strong>Demo User:</strong> demo@expense.com / User@123456</div>
+        <div><strong>Admin User:</strong> admin@expense.com / Admin@123456</div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="fillCreds('demo@expense.com', 'User@123456')" style="flex: 1;">Fill Demo User</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="fillCreds('admin@expense.com', 'Admin@123456')" style="flex: 1;">Fill Admin</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function fillCreds(email, pass) {
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = pass;
+  }
+</script>
+{% endblock %}
